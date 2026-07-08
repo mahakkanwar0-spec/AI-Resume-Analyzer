@@ -1,8 +1,12 @@
 from openai import OpenAI
 import json
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+if not os.getenv("OPENAI_API_KEY"):
+    raise ValueError("OPENAI_API_KEY not found — check your .env file is in the same folder and named exactly '.env'")
 
 def analyze_resume(resume_text, user_goal):
     prompt=f"""
@@ -39,10 +43,12 @@ Resume:
                       {"role":"user","content":prompt}
                       ]
         )
-
-        content=response.choices[0].message.content.strip()
-        start=content.find("{")
-        end=content.rfind("}")+1
+        raw_content = response.choices[0].message.content
+        if not raw_content:
+            raise ValueError("Model returned empty content")
+        content = raw_content.strip()
+        start = content.find("{")
+        end = content.rfind("}") + 1
 
         return json.loads(content[start:end])
     
